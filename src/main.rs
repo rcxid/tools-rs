@@ -1,17 +1,66 @@
+use clap::Parser;
 use encoding_rs::GBK;
-use std::{error::Error, process::Command};
+use reqwest::StatusCode;
+use std::{error::Error, process::Command, time::Duration};
 
 fn main() {
-    if cfg!(target_os = "windows") {
-        if let Ok(ipv6_list) = get_windows_ipv6(1) {
-            for ipv6 in ipv6_list {
-                println!("{}", ipv6);
+    let args = Args::parse();
+    let zone = args.zone.as_str();
+    let token = args.token.as_str();
+    println!("zone: {} token: {}", zone, token);
+    let interval = Duration::from_secs(60);
+    let mut record_ipv6 = String::new();
+    loop {
+        if let Ok(ipv6_list) = get_system_ipv6(1) {
+            if ipv6_list.len() == 1 {
+                let ipv6 = ipv6_list[0].as_str();
+                if ipv6 != record_ipv6 {
+                    if let Some(update_ipv6) = update_dynv6(zone, token, ipv6) {
+                        record_ipv6 = update_ipv6;
+                    }
+                }
             }
         }
+        std::thread::sleep(interval);
+    }
+}
+
+/// Simple program to update dynv6 ipv6 address!
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Your dynv6 zone name.
+    #[arg(short, long)]
+    zone: String,
+    /// An HTTP token for this zone.
+    #[arg(short, long)]
+    token: String,
+}
+
+/// update dynv6 ipv6 address!
+fn update_dynv6(zone: &str, token: &str, ipv6: &str) -> Option<String> {
+    let mut update_ipv6 = None;
+    let url = format!("https://dynv6.com/api/update?zone={zone}&token={token}&ipv6={ipv6}");
+    if let Ok(response) = reqwest::blocking::get(url) {
+        // println!("{:#?}", response);
+        if response.status() == StatusCode::OK {
+            println!("update ipv6 success: {ipv6}");
+            update_ipv6 = Some(ipv6.to_string());
+        }
+    } else {
+        println!("update dynv6 failed!");
+    }
+    update_ipv6
+}
+
+/// 获取系统ipv6地址
+fn get_system_ipv6(min_size: usize) -> Result<Vec<String>, Box<dyn Error>> {
+    if cfg!(target_os = "windows") {
+        get_windows_ipv6(min_size)
     } else if cfg!(target_os = "linux") {
         todo!()
     } else {
-        println!("unsupport operate system!")
+        panic!("unsupport operate system!");
     }
 }
 

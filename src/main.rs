@@ -58,6 +58,8 @@ fn update_dynv6(zone: &str, token: &str, ipv6: &str) -> Option<String> {
 fn get_system_ipv6() -> Result<Vec<String>, Box<dyn std::error::Error>> {
     if cfg!(target_os = "windows") {
         get_windows_ipv6()
+    } else if cfg!(target_os = "macos") {
+        get_macos_ipv6()
     } else if cfg!(target_os = "linux") {
         todo!()
     } else {
@@ -79,6 +81,28 @@ fn get_windows_ipv6() -> Result<Vec<String>, Box<dyn std::error::Error>> {
                 let line_split = line.split(": ").collect::<Vec<&str>>();
                 let ipv6 = line_split[1].to_string();
                 if line_split.len() == 2 && !ipv6.starts_with("f") {
+                    Some(ipv6)
+                } else {
+                    None
+                }
+            })
+            .collect())
+    } else {
+        Err(Box::new(AppError::ExecutionError))
+    }
+}
+
+fn get_macos_ipv6() -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let output = Command::new("ifconfig").output().unwrap();
+    if output.status.success() {
+        let output_str = String::from_utf8(output.stdout).unwrap();
+        let lines = output_str.split("\n");
+        Ok(lines
+            .filter(|line| line.trim().starts_with("inet6"))
+            .filter_map(|line| {
+                let line_split = line.split(" ").collect::<Vec<&str>>();
+                let ipv6 = line_split[1].to_string();
+                if ipv6.starts_with("2") {
                     Some(ipv6)
                 } else {
                     None

@@ -1,7 +1,8 @@
 use clap::Parser;
 use encoding_rs::GBK;
 use reqwest::StatusCode;
-use std::{error::Error, process::Command, time::Duration};
+use thiserror::Error;
+use std::{process::Command, time::Duration};
 
 fn main() {
     let args = Args::parse();
@@ -11,8 +12,8 @@ fn main() {
     let interval = Duration::from_secs(60);
     let mut record_ipv6 = String::new();
     loop {
-        if let Ok(ipv6_list) = get_system_ipv6(1) {
-            if ipv6_list.len() == 1 {
+        if let Ok(ipv6_list) = get_system_ipv6() {
+            if ipv6_list.len() > 0 {
                 let ipv6 = ipv6_list[0].as_str();
                 if ipv6 != record_ipv6 {
                     if let Some(update_ipv6) = update_dynv6(zone, token, ipv6) {
@@ -54,9 +55,9 @@ fn update_dynv6(zone: &str, token: &str, ipv6: &str) -> Option<String> {
 }
 
 /// 获取系统ipv6地址
-fn get_system_ipv6(min_size: usize) -> Result<Vec<String>, Box<dyn Error>> {
+fn get_system_ipv6() -> Result<Vec<String>, Box<dyn std::error::Error>> {
     if cfg!(target_os = "windows") {
-        get_windows_ipv6(min_size)
+        get_windows_ipv6()
     } else if cfg!(target_os = "linux") {
         todo!()
     } else {
@@ -66,33 +67,31 @@ fn get_system_ipv6(min_size: usize) -> Result<Vec<String>, Box<dyn Error>> {
 
 /// 通过ipconfig命令获取系统ipv6地址
 /// min_size: 返回ipv6数量
-fn get_windows_ipv6(min_size: usize) -> Result<Vec<String>, Box<dyn Error>> {
-    let mut result = Vec::new();
+fn get_windows_ipv6() -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let output = Command::new("ipconfig.exe").output()?;
     if output.status.success() {
         let decoded = GBK.decode(&output.stdout);
         let output_str = decoded.0.into_owned();
         let lines = output_str.split("\r\n");
-        for line in lines {
-            if line.trim().starts_with("IPv6") {
-                let b = line.split(": ").collect::<Vec<&str>>();
-                if b.len() == 2 {
-                    result.push(b[1].to_string());
-                }
-            }
-        }
-    }
-    Ok(result
-        .into_iter()
-        .enumerate()
-        .filter_map(
-            |(index, value)| {
-                if index < min_size {
-                    Some(value)
+        Ok(lines
+            .filter(|line| line.trim().starts_with("IPv6"))
+            .filter_map(|line| {
+                let line_split = line.split(": ").collect::<Vec<&str>>();
+                let ipv6 = line_split[1].to_string();
+                if line_split.len() == 2 && !ipv6.starts_with("f") {
+                    Some(ipv6)
                 } else {
                     None
                 }
-            },
-        )
-        .collect())
+            })
+            .collect())
+    } else {
+        Err(Box::new(AppError::ExecutionError))
+    }
+}
+
+#[derive(Error, Debug)]
+enum AppError {
+    #[error("Command execution error!")]
+    ExecutionError
 }

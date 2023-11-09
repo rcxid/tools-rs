@@ -1,8 +1,8 @@
 use clap::Parser;
 use encoding_rs::GBK;
 use reqwest::StatusCode;
-use thiserror::Error;
 use std::{process::Command, time::Duration};
+use thiserror::Error;
 
 fn main() {
     let args = Args::parse();
@@ -61,7 +61,7 @@ fn get_system_ipv6() -> Result<Vec<String>, Box<dyn std::error::Error>> {
     } else if cfg!(target_os = "macos") {
         get_macos_ipv6()
     } else if cfg!(target_os = "linux") {
-        todo!()
+        get_linux_ipv6()
     } else {
         panic!("unsupport operate system!");
     }
@@ -93,9 +93,33 @@ fn get_windows_ipv6() -> Result<Vec<String>, Box<dyn std::error::Error>> {
 }
 
 fn get_macos_ipv6() -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let output = Command::new("ifconfig").output().unwrap();
+    let output = Command::new("ifconfig").output()?;
     if output.status.success() {
-        let output_str = String::from_utf8(output.stdout).unwrap();
+        let output_str = String::from_utf8(output.stdout)?;
+        let lines = output_str.split("\n");
+        Ok(lines
+            .filter(|line| line.trim().starts_with("inet6"))
+            .filter_map(|line| {
+                let line_split = line.split(" ").collect::<Vec<&str>>();
+                let ipv6 = line_split[1].to_string();
+                if ipv6.starts_with("2") {
+                    Some(ipv6)
+                } else {
+                    None
+                }
+            })
+            .collect())
+    } else {
+        Err(Box::new(AppError::ExecutionError))
+    }
+}
+
+/// 通过ip addr获取linux ipv6
+fn get_linux_ipv6() -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let output = Command::new("ip addr").output()?;
+    if output.status.success() {
+        let output_str = String::from_utf8(output.stdout)?;
+        println!("{}", output_str);
         let lines = output_str.split("\n");
         Ok(lines
             .filter(|line| line.trim().starts_with("inet6"))
@@ -117,5 +141,5 @@ fn get_macos_ipv6() -> Result<Vec<String>, Box<dyn std::error::Error>> {
 #[derive(Error, Debug)]
 enum AppError {
     #[error("Command execution error!")]
-    ExecutionError
+    ExecutionError,
 }

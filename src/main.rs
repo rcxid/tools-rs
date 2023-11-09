@@ -116,15 +116,14 @@ fn get_macos_ipv6() -> Result<Vec<String>, Box<dyn std::error::Error>> {
 
 /// 通过ip addr获取linux ipv6
 fn get_linux_ipv6() -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let output = Command::new("ip addr").output()?;
+    let output = Command::new("ip").arg("addr").output()?;
     if output.status.success() {
         let output_str = String::from_utf8(output.stdout)?;
-        println!("{}", output_str);
         let lines = output_str.split("\n");
         Ok(lines
             .filter(|line| line.trim().starts_with("inet6"))
             .filter_map(|line| {
-                let line_split = line.split(" ").collect::<Vec<&str>>();
+                let line_split = line.trim().split(" ").collect::<Vec<&str>>();
                 let ipv6 = line_split[1].to_string();
                 if ipv6.starts_with("2") {
                     Some(ipv6)

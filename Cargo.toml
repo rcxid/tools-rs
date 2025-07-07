@@ -1,12 +1,15 @@
 [package]
-name = "dynv6"
+name = "tools-rs"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+members = ["dynv6"]
+
+[workspace.dependencies]
+clap = { version = "4.5.40", features = ["derive"] }
+encoding_rs = "0.8.35"
+reqwest = { version = "0.12.22", features = ["blocking"] }
+thiserror = "2.0.12"
 
 [dependencies]
-clap = { version = "4.3.19", features = ["derive"] }
-encoding_rs = "0.8.32"
-reqwest = { version = "0.11.18", features = ["blocking"] }
-thiserror = "1.0.47"

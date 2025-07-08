@@ -4,12 +4,14 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members = ["dynv6"]
+members = ["dynv6", "file-server"]
 
 [workspace.dependencies]
 clap = { version = "4.5.40", features = ["derive"] }
 encoding_rs = "0.8.35"
 reqwest = { version = "0.12.22", features = ["blocking"] }
+salvo = { version = "0.79.0", features = ["serve-static"] }
 thiserror = "2.0.12"
+tokio = { version = "1.46.1", features = ["full"] }
 
 [dependencies]

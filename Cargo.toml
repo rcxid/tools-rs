@@ -7,6 +7,7 @@ edition = "2024"
 members = ["algorithm/gobang", "dynv6", "file-server"]
 
 [workspace.dependencies]
+anyhow = "1.0.98"
 clap = { version = "4.5.40", features = ["derive"] }
 encoding_rs = "0.8.35"
 reqwest = { version = "0.12.22", features = ["blocking"] }

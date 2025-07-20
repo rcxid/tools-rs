@@ -1,6 +1,5 @@
 use anyhow::anyhow;
 use clap::Parser;
-use encoding_rs::GBK;
 use reqwest::StatusCode;
 use std::{process::Command, time::Duration};
 
@@ -56,7 +55,7 @@ impl Dynv6 {
     fn update(&mut self) {
         let interval = Duration::from_secs(self.interval);
         loop {
-            if let Ok(ipv6_list) = Self::get_system_ipv6() {
+            if let Ok(ipv6_list) = Self::get_ipv6_list() {
                 if ipv6_list.len() > 0 {
                     let ipv6 = ipv6_list[0].as_str();
                     self.update_ip(ipv6);
@@ -85,22 +84,11 @@ impl Dynv6 {
         }
     }
 
-    /// 获取系统ipv6地址
-    fn get_system_ipv6() -> anyhow::Result<Vec<String>> {
-        if cfg!(target_os = "windows") {
-            Self::get_windows_ipv6()
-        } else if cfg!(target_os = "macos") {
-            Self::get_macos_ipv6()
-        } else if cfg!(target_os = "linux") {
-            Self::get_linux_ipv6()
-        } else {
-            panic!("Unsupported operate system!");
-        }
-    }
-
     /// 通过ipconfig命令获取系统ipv6地址
     /// min_size: 返回ipv6数量
-    fn get_windows_ipv6() -> anyhow::Result<Vec<String>> {
+    #[cfg(target_os = "windows")]
+    fn get_ipv6_list() -> anyhow::Result<Vec<String>> {
+        use encoding_rs::GBK;
         let output = Command::new("ipconfig.exe").output()?;
         if output.status.success() {
             let decoded = GBK.decode(&output.stdout);
@@ -123,7 +111,8 @@ impl Dynv6 {
         }
     }
 
-    fn get_macos_ipv6() -> anyhow::Result<Vec<String>> {
+    #[cfg(target_os = "macos")]
+    fn get_ipv6_list() -> anyhow::Result<Vec<String>> {
         let output = Command::new("ifconfig").output()?;
         if output.status.success() {
             let output_str = String::from_utf8(output.stdout)?;
@@ -146,7 +135,8 @@ impl Dynv6 {
     }
 
     /// 通过ip addr获取linux ipv6
-    fn get_linux_ipv6() -> anyhow::Result<Vec<String>> {
+    #[cfg(target_os = "linux")]
+    fn get_ipv6_list() -> anyhow::Result<Vec<String>> {
         let output = Command::new("ip").arg("addr").output()?;
         if output.status.success() {
             let output_str = String::from_utf8(output.stdout)?;

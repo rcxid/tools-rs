@@ -4,15 +4,21 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members = ["algorithm/gobang", "dynv6", "file-server"]
+members = ["algorithm/gobang", "cloud-189", "dynv6", "file-server"]
 
 [workspace.dependencies]
 anyhow = "1.0.98"
 clap = { version = "4.5.40", features = ["derive"] }
 encoding_rs = "0.8.35"
-reqwest = { version = "0.12.22", features = ["blocking"] }
-salvo = { version = "0.79.0", features = ["serve-static"] }
-thiserror = "2.0.12"
+hex = "0.4.3"
+md5 = "0.8.0"
+rand = "0.8.5"
+regex = "1.11.1"
+reqwest = { version = "0.12.22", features = ["blocking", "json"] }
+rsa = { version = "0.9.8", features = ["pem"]}
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.141"
 tokio = { version = "1.46.1", features = ["full"] }
+url = "2.5.4"
 
 [dependencies]

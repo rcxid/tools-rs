@@ -4,12 +4,14 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members = ["algorithm/gobang", "cloud-189", "common", "crawler", "ddns", "file-server"]
+members = ["algorithm/gobang", "cloud-189", "common", "crawler", "ddns", "file-server", "s3-tool"]
 
 [workspace.dependencies]
 common = { path = "./common" }
 anyhow = "1.0.98"
 async-trait = "0.1.88"
+aws-config = "1.8.5"
+aws-sdk-s3 = "1.103.0"
 clap = { version = "4.5.40", features = ["derive"] }
 encoding_rs = "0.8.35"
 hex = "0.4.3"

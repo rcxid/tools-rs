@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members = ["algorithm/gobang", "cloud-189", "common", "crawler", "ddns", "file-server", "s3-tool"]
+members = ["algorithm/gobang", "cloud-189", "common", "crawler", "ddns", "feishu", "file-server", "s3-tool"]
 
 [workspace.dependencies]
 common = { path = "./common" }
